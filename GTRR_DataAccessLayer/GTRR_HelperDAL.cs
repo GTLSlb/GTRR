@@ -11,7 +11,7 @@ namespace GTRR_DataAccessLayer
 {
     public static class GTRR_HelperDAL
     {
-        private static readonly string gtrrConnectionString;
+        private static readonly string? gtrrConnectionString;
         private static readonly int commandTimeout = 120;
 
 
@@ -347,6 +347,301 @@ namespace GTRR_DataAccessLayer
             {
                 errorMessage = "Unexpected Error: " + ex.Message;
                 return ("", "", errorMessage);
+            }
+        }
+
+
+
+
+
+
+        public static async Task<(string Json, string Msg, string ErrorMessage)> GetVehicleTypes(int? userId)
+        {
+            string json = "";
+            string msg = "";
+            string errorMessage = "";
+
+            try
+            {
+                using var connection = new SqlConnection(gtrrConnectionString);
+                using var command = new SqlCommand("GetVehicleTypes", connection)
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    CommandTimeout = commandTimeout
+                };
+
+                command.Parameters.Add(new SqlParameter("@LOGGED_USER", userId ?? (object)DBNull.Value));
+
+                var reportParam = new SqlParameter("@JSON", SqlDbType.NVarChar, -1)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                command.Parameters.Add(reportParam);
+
+                var msgParam = new SqlParameter("@MSG", SqlDbType.VarChar, 200)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                command.Parameters.Add(msgParam);
+
+                await connection.OpenAsync();
+                await command.ExecuteNonQueryAsync();
+
+                json = reportParam.Value?.ToString() ?? "";
+                msg = msgParam.Value?.ToString() ?? "";
+
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    json = "[]";
+                }
+
+                return (json, msg, errorMessage);
+            }
+            catch (SqlException ex) when (ex.Number == -2)
+            {
+                errorMessage = "Execution Timeout Expired. Please try again later or optimize your query.";
+                return ("", "", errorMessage);
+            }
+            catch (SqlException ex)
+            {
+                errorMessage = "SQL Error: " + ex.Message;
+                return ("", "", errorMessage);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = "Unexpected Error: " + ex.Message;
+                return ("", "", errorMessage);
+            }
+
+        }
+
+        public static async Task<(string Msg, string ErrorMessage)> AddEditVehicleType(int? userId, string vehicletype)
+        {
+            string msg = "";
+            string errorMessage = "";
+           
+            try
+            {
+                var parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@LOGGED_USER", userId ?? (object)DBNull.Value),
+                new SqlParameter("@VEHICLE_TYPE", vehicletype ?? (object)DBNull.Value)
+            };
+
+                var msgParam = new SqlParameter("@MSG", SqlDbType.VarChar, 200)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                parameters.Add(msgParam);
+
+                
+
+                using (var connection = new SqlConnection(gtrrConnectionString))
+                using (var command = new SqlCommand("AddEditVehicleType", connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandTimeout = commandTimeout;
+                    command.Parameters.AddRange(parameters.ToArray());
+
+                    await connection.OpenAsync();
+                    await command.ExecuteNonQueryAsync();
+
+                    msg = msgParam.Value?.ToString() ?? "";
+                    
+
+                }
+
+                return( msg, errorMessage);
+            }
+            catch (SqlException ex) when (ex.Number == -2)
+            {
+                errorMessage = "Execution Timeout Expired. Please try again later or optimize your query.";
+                return ( "", errorMessage);
+            }
+            catch (SqlException ex)
+            {
+                errorMessage = "An error occurred while executing the SQL command: " + ex.Message;
+                return ("", errorMessage);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = "An error occurred: " + ex.Message;
+                return ( "", errorMessage);
+            }
+        }
+
+        public static async Task<(string Json, string Msg, string ErrorMessage)> GetStates(int? userId)
+        {
+            string json = "";
+            string msg = "";
+            string errorMessage = "";
+
+            try
+            {
+                using var connection = new SqlConnection(gtrrConnectionString);
+                using var command = new SqlCommand("GetStates", connection)
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    CommandTimeout = commandTimeout
+                };
+
+                command.Parameters.Add(new SqlParameter("@LOGGED_USER", userId ?? (object)DBNull.Value));
+
+                var reportParam = new SqlParameter("@JSON", SqlDbType.NVarChar, -1)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                command.Parameters.Add(reportParam);
+
+                var msgParam = new SqlParameter("@MSG", SqlDbType.VarChar, 200)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                command.Parameters.Add(msgParam);
+
+                await connection.OpenAsync();
+                await command.ExecuteNonQueryAsync();
+
+                json = reportParam.Value?.ToString() ?? "";
+                msg = msgParam.Value?.ToString() ?? "";
+
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    json = "[]";
+                }
+
+                return (json, msg, errorMessage);
+            }
+            catch (SqlException ex) when (ex.Number == -2)
+            {
+                errorMessage = "Execution Timeout Expired. Please try again later or optimize your query.";
+                return ("", "", errorMessage);
+            }
+            catch (SqlException ex)
+            {
+                errorMessage = "SQL Error: " + ex.Message;
+                return ("", "", errorMessage);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = "Unexpected Error: " + ex.Message;
+                return ("", "", errorMessage);
+            }
+
+        }
+
+        public static async Task<(string Json, string Msg, string ErrorMessage)> GetRequiredDocs(int? userId)
+        {
+            string json = "";
+            string msg = "";
+            string errorMessage = "";
+
+            try
+            {
+                using var connection = new SqlConnection(gtrrConnectionString);
+                using var command = new SqlCommand("GetRequiredDocs", connection)
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    CommandTimeout = commandTimeout
+                };
+
+                command.Parameters.Add(new SqlParameter("@LOGGED_USER", userId ?? (object)DBNull.Value));
+
+                var reportParam = new SqlParameter("@JSON", SqlDbType.NVarChar, -1)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                command.Parameters.Add(reportParam);
+
+                var msgParam = new SqlParameter("@MSG", SqlDbType.VarChar, 200)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                command.Parameters.Add(msgParam);
+
+                await connection.OpenAsync();
+                await command.ExecuteNonQueryAsync();
+
+                json = reportParam.Value?.ToString() ?? "";
+                msg = msgParam.Value?.ToString() ?? "";
+
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    json = "[]";
+                }
+
+                return (json, msg, errorMessage);
+            }
+            catch (SqlException ex) when (ex.Number == -2)
+            {
+                errorMessage = "Execution Timeout Expired. Please try again later or optimize your query.";
+                return ("", "", errorMessage);
+            }
+            catch (SqlException ex)
+            {
+                errorMessage = "SQL Error: " + ex.Message;
+                return ("", "", errorMessage);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = "Unexpected Error: " + ex.Message;
+                return ("", "", errorMessage);
+            }
+
+        }
+
+        public static async Task<(string Msg, string ErrorMessage)> AddEditRequiredDocuments(int? userId, string requiredDoc)
+        {
+            string msg = "";
+            string errorMessage = "";
+
+            try
+            {
+                var parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@LOGGED_USER", userId ?? (object)DBNull.Value),
+                new SqlParameter("@REQ_DOCS", requiredDoc ?? (object)DBNull.Value)
+            };
+
+                var msgParam = new SqlParameter("@MSG", SqlDbType.VarChar, 200)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                parameters.Add(msgParam);
+
+
+
+                using (var connection = new SqlConnection(gtrrConnectionString))
+                using (var command = new SqlCommand("AddEditRequiredDocuments", connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandTimeout = commandTimeout;
+                    command.Parameters.AddRange(parameters.ToArray());
+
+                    await connection.OpenAsync();
+                    await command.ExecuteNonQueryAsync();
+
+                    msg = msgParam.Value?.ToString() ?? "";
+
+
+                }
+
+                return (msg, errorMessage);
+            }
+            catch (SqlException ex) when (ex.Number == -2)
+            {
+                errorMessage = "Execution Timeout Expired. Please try again later or optimize your query.";
+                return ("", errorMessage);
+            }
+            catch (SqlException ex)
+            {
+                errorMessage = "An error occurred while executing the SQL command: " + ex.Message;
+                return ("", errorMessage);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = "An error occurred: " + ex.Message;
+                return ("", errorMessage);
             }
         }
 
