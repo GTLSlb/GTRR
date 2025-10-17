@@ -1,0 +1,83 @@
+name: Build & Deploy ASP.NET Core (.NET 9) to IIS Testing
+
+on:
+  push:
+    branches: [ "Development" ]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to deploy"
+        required: true
+        default: "Development"
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore GTRR.sln
+
+      - name: Build solution
+        run: dotnet build GTRR.sln --configuration Release --no-restore
+
+      - name: Publish web app
+        run: dotnet publish GTRRWebApplication/GTRRWebApplication.csproj -c Release -o "${{ github.workspace }}/PublishedWebApp"
+
+      - name: Verify published folder
+        run: |
+          if (Test-Path "${{ github.workspace }}/PublishedWebApp") {
+            Write-Host "Published folder found:"
+            Get-ChildItem "${{ github.workspace }}/PublishedWebApp" -Recurse
+          } else {
+            Write-Error "Published folder not found!"
+          }
+        shell: pwsh
+
+      - name: Upload published folder as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp
+          path: PublishedWebApp
+          if-no-files-found: error
+
+
+  deploy:
+    needs: build
+    runs-on: windows-latest
+    environment:
+      name: Testing
+      url: https://dev-api-gtrr.gtls.com.au
+    env:
+      DEPLOY_SITE: ${{ secrets.DEPLOY_SITE }}
+      DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PASS: ${{ secrets.DEPLOY_PASS }}
+
+    steps:
+      - name: Download published artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: webapp
+          path: ./webapp
+
+      # Use Web Deploy to sync files to IIS (same as before)
+      - name: Deploy to IIS via Web Deploy
+        shell: cmd
+        run: |
+          set SOURCE_PATH=%CD%\webapp
+          "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" ^
+            -verb:sync ^
+            -source:contentPath="%SOURCE_PATH%" ^
+            -dest:contentPath=%DEPLOY_SITE%,computerName=https://%DEPLOY_SERVER%:8172/msdeploy.axd?site=%DEPLOY_SITE%,userName="%DEPLOY_USER%",password="%DEPLOY_PASS%",authType=Basic ^
+            -enableRule:DoNotDeleteRule
