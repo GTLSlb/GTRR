@@ -2,9 +2,6 @@
 using GTRRWebApplication.Filters;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.IO.Compression;
-using System.Net;
-using System.Text;
 using System.Text.Json;
 
 namespace GTRRWebApplication.Controllers
@@ -12,19 +9,20 @@ namespace GTRRWebApplication.Controllers
     [Route("api/GTRR/V1")]
     [ApiController]
     [TokenAuthorize]
-    public class SenderReceiversController : ControllerBase
+    public class AssetsController : ControllerBase
     {
-        private readonly ILogger<SenderReceiversController> _logger;
+        private readonly ILogger<AssetsController> _logger;
 
-        public SenderReceiversController(ILogger<SenderReceiversController> logger)
+        public AssetsController(ILogger<AssetsController> logger)
         {
             _logger = logger;
         }
 
 
-        [HttpGet("SenderReceivers")]
+
+        [HttpGet("VehicleTypes")]
         [GzipCompression]
-        public async Task<IActionResult> SenderReceivers()
+        public async Task<IActionResult> VehicleTypes()
         {
             if (!Request.Headers.TryGetValue("UserId", out var headerValue) ||
                 !int.TryParse(headerValue.FirstOrDefault(), out int userId))
@@ -36,8 +34,8 @@ namespace GTRRWebApplication.Controllers
             _logger.LogInformation("Request: {Path}, UserId: {UserId}, Method: {Method}",
                 Request.Path, userId, Request.Method);
 
-         
-            var (json, msg, error) = await GTRR_HelperDAL.GetSenderReceivers(userId);
+
+            var (json, msg, error) = await GTRR_HelperDAL.GetVehicleTypes(userId);
 
             if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
             {
@@ -45,18 +43,18 @@ namespace GTRRWebApplication.Controllers
                 return BadRequest(msg);
             }
 
-            _logger.LogInformation("Returning compressed response for GetSenderReceivers.");
+            _logger.LogInformation("Returning compressed response for GetVehicleTypes.");
 
 
             var data = JsonSerializer.Deserialize<object>(json);
 
             return Ok(data);
         }
-       
 
 
-        [HttpPost("SenderReceiver")]
-        public async Task<IActionResult> AddEditSenderReceivers([FromBody] object senderreceiver)
+
+        [HttpPost("VehicleType")]
+        public async Task<IActionResult> AddEditVehicleType([FromBody] object vehicletype)
         {
             if (!Request.Headers.TryGetValue("UserId", out var headerValues) ||
                 !int.TryParse(headerValues.FirstOrDefault(), out int userId))
@@ -64,19 +62,19 @@ namespace GTRRWebApplication.Controllers
                 return BadRequest("Invalid or missing UserId header parameter");
             }
 
-            if (senderreceiver == null)
+            if (vehicletype == null)
             {
                 return BadRequest("Invalid or missing request body");
             }
 
-     
+
             _logger.LogInformation("Request: {Method} {Path}", Request.Method, Request.Path);
             _logger.LogInformation("UserId: {UserId}", userId);
-            _logger.LogInformation("Body: {Body}", JsonSerializer.Serialize(senderreceiver));
+            _logger.LogInformation("Body: {Body}", JsonSerializer.Serialize(vehicletype));
 
-        
 
-            var (id,msg, error) = await GTRR_HelperDAL.AddEditSenderReceiver(userId, JsonSerializer.Serialize(senderreceiver));
+
+            var (msg, error) = await GTRR_HelperDAL.AddEditVehicleType(userId, JsonSerializer.Serialize(vehicletype));
 
             if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
             {
@@ -87,37 +85,38 @@ namespace GTRRWebApplication.Controllers
             _logger.LogInformation("Response: [200 OK]");
 
 
-            return Ok(new
-            {
-                SenderReceiverId = id
-            
-            });
+            return Ok();
         }
 
-        [HttpGet("SenderReceiver")]
+
+        [HttpGet("States")]
         [GzipCompression]
-        public async Task<IActionResult> GetSenderReceiverById()
+        public async Task<IActionResult> GetStates()
         {
-            
-            if (!Request.Headers.TryGetValue("UserId", out var userIdHeader) ||
-                !int.TryParse(userIdHeader.FirstOrDefault(), out int loggedUser))
+            if (!Request.Headers.TryGetValue("UserId", out var headerValue) ||
+                !int.TryParse(headerValue.FirstOrDefault(), out int userId))
             {
-                return BadRequest("Invalid or missing UserId header.");
+                _logger.LogWarning("Invalid or missing UserId header parameter.");
+                return BadRequest("Invalid or missing UserId header parameter");
             }
 
-           
-            if (!Request.Headers.TryGetValue("SenderReceiverId", out var idHeader) ||
-                !int.TryParse(idHeader.FirstOrDefault(), out int senderReceiverId))
+            _logger.LogInformation("Request: {Path}, UserId: {UserId}, Method: {Method}",
+                Request.Path, userId, Request.Method);
+
+
+            var (json, msg, error) = await GTRR_HelperDAL.GetStates(userId);
+
+            if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
             {
-                return BadRequest("Invalid or missing SenderReceiverId header.");
+                _logger.LogWarning("Bad Request: {Msg}, Error: {Error}", msg, error);
+                return BadRequest(msg);
             }
 
-            var (json, msg, error) = await GTRR_HelperDAL.GetSenderReceiverByIdAsync(loggedUser, senderReceiverId);
+            _logger.LogInformation("Returning compressed response for GetStates.");
 
-            if (!string.IsNullOrEmpty(error))
-                return BadRequest(error);
 
             var data = JsonSerializer.Deserialize<object>(json);
+
             return Ok(data);
         }
 

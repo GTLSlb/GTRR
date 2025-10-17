@@ -10,7 +10,7 @@ namespace GTRRWebApplication.Filters
     {
         public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
-            string message;
+            string? message;
 
             if (!IsTokenValid(context, out message))
             {
@@ -28,7 +28,7 @@ namespace GTRRWebApplication.Filters
             await Task.CompletedTask;
         }
 
-        private bool IsTokenValid(AuthorizationFilterContext context, out string message)
+        private bool IsTokenValid(AuthorizationFilterContext context, out string? message)
         {
             message = null;
 
@@ -64,7 +64,7 @@ namespace GTRRWebApplication.Filters
             return YourTokenValidationLogic(token, userId, out message);
         }
 
-        private bool YourTokenValidationLogic(string token, int userId, out string message)
+        private bool YourTokenValidationLogic(string token, int userId, out string? message)
         {
             message = null;
 
