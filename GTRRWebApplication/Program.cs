@@ -7,7 +7,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
            
             "https://gtrr.gtls.store",
-            "http://localhost:3000" 
+            "http://localhost:3000",
+            "https://gtrr-api.gtls.store"
         )
         .AllowAnyHeader()
         .AllowAnyMethod();
