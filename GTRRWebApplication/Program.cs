@@ -4,13 +4,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
+    .MinimumLevel.Information() 
+    .Enrich.FromLogContext()
     .WriteTo.File(
-        path: "Logs/log.txt",
-        rollingInterval: RollingInterval.Day, 
-        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} | {Level:u3} | {SourceContext} | {Message:lj}{NewLine}{Exception}"
-    )
+        path: "Logs/app-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 14,
+        shared: true,
+        outputTemplate:
+        "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{Level:u3}] ({ProcessId}/{ThreadId}) {SourceContext} | {Message:lj}{NewLine}{Exception}")
     .CreateLogger();
+
 
 builder.Services.AddCors(options =>
 {
