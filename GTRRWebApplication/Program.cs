@@ -22,7 +22,7 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
 
-            "https://gtrr.gtls.com.lb/e",
+            "https://gtrr.gtls.com.lb/",
             "https://gtrr-api.gtls.com.lb/",
             "http://localhost:3000",
             "http://localhost:3001"
