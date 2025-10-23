@@ -4,12 +4,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
-    .WriteTo.Console() // optional, logs to console
+    .MinimumLevel.Information()
     .WriteTo.File(
         path: "Logs/log.txt",
-        rollingInterval: RollingInterval.Day, // creates a new file each day
-        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+        rollingInterval: RollingInterval.Day, 
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} | {Level:u3} | {SourceContext} | {Message:lj}{NewLine}{Exception}"
     )
     .CreateLogger();
 
