@@ -8,7 +8,7 @@ namespace GTRRWebApplication.Controllers
 {
     [Route("api/GTRR/V1")]
     [ApiController]
-    [TokenAuthorize]
+    //[TokenAuthorize]
     public class AssetsController : ControllerBase
     {
         private readonly ILogger<AssetsController> _logger;
