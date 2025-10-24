@@ -4,7 +4,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information() 
+    .MinimumLevel.Information()
     .Enrich.FromLogContext()
     .WriteTo.File(
         path: "Logs/app-.log",
@@ -21,10 +21,12 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigins", policy =>
     {
         policy.WithOrigins(
-           
+
             "https://gtrr.gtls.store",
+            "https://gtrr-api.gtls.store",
             "http://localhost:3000",
-            "https://gtrr-api.gtls.store"
+            "http://localhost:3001"
+          
         )
         .AllowAnyHeader()
         .AllowAnyMethod();
@@ -51,5 +53,6 @@ app.UseCors("AllowSpecificOrigins");
 app.UseAuthorization();
 
 app.MapControllers();
+
 
 app.Run();

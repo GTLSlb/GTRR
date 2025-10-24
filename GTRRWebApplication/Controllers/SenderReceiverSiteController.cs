@@ -34,9 +34,17 @@ namespace GTRRWebApplication.Controllers
             }
 
 
-            _logger.LogInformation("Request: {Method} {Path}", Request.Method, Request.Path);
-            _logger.LogInformation("UserId: {UserId}", userId);
-            _logger.LogInformation("Body: {Body}", JsonSerializer.Serialize(site));
+              _logger.LogInformation(
+                "\nRequest: [{Method}] {Path}" +
+                "\nUserId: {UserId}" +
+                "\nBody: {Body}" +
+                "\n{Separator}",
+                Request.Method,
+                Request.Path,
+                userId,
+                JsonSerializer.Serialize(site),
+                new string('-', 200)
+                );
 
 
 
@@ -44,11 +52,23 @@ namespace GTRRWebApplication.Controllers
 
             if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
             {
-                _logger.LogWarning("Response: [400 Bad Request] Msg: {Msg}, Error: {Error}", msg, error);
+                _logger.LogInformation(
+                      "\nMethod: {Method}" +
+                      "\nRequest: {Url}" +
+                      "\nHeader:\nUserId={UserId}\n",
+                      Request.Method,
+                      $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
+                      Request.Headers["UserId"].ToString()
+                  );
                 return BadRequest(msg);
             }
 
-            _logger.LogInformation("Response: [200 OK]");
+            _logger.LogInformation(
+                 "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
+                 "GetSenderReceivers",
+                 "200 OK",
+                 new string('-', 200)
+             );
             return Ok();
         }
 
@@ -67,15 +87,42 @@ namespace GTRRWebApplication.Controllers
             if (!Request.Headers.TryGetValue("SenderReceiverSiteId", out var idHeader) ||
                 !int.TryParse(idHeader.FirstOrDefault(), out int SenderReceiverSiteId))
             {
+              
+
                 return BadRequest("Invalid or missing SenderReceiverSiteId header.");
             }
-
+            _logger.LogInformation(
+                       "\nMethod: {Method}" +
+                       "\nRequest: {Url}" +
+                       "\nHeader:\nUserId={UserId}\n",
+                       Request.Method,
+                       $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
+                       Request.Headers["UserId"].ToString()
+                   );
             var (json, msg, error) = await GTRR_HelperDAL.GetSenderReceiverSiteByIdAsync(loggedUser, SenderReceiverSiteId);
 
             if (!string.IsNullOrEmpty(error))
-                return BadRequest(error);
+            {
+                _logger.LogInformation(
+                     "\nResponse: [{Action}] [{StatusCode}] {Message}" +
+                     "\nOriginal Error: {Error}" +
+                     "\n{Separator}",
+                     "GetSenderReceiverSiteById",
+                     "400 Bad Request",
+                     msg,
+                     error,
+                     new string('-', 200)
+                 );
+
+                return BadRequest(error); }
 
             var data = JsonSerializer.Deserialize<object>(json);
+                    _logger.LogInformation(
+                         "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
+                         "GetSenderReceiverSiteById",
+                         "200 OK",
+                         new string('-', 200)
+                     );
             return Ok(data);
         }
     }

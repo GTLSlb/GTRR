@@ -1,7 +1,9 @@
-﻿using GTRR_DataAccessLayer;
+﻿using Azure.Core;
+using GTRR_DataAccessLayer;
 using GTRRWebApplication.Filters;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
@@ -16,7 +18,7 @@ namespace GTRRWebApplication.Controllers
 
     {
         private readonly ILogger<SenderReceiversController> _logger;
-
+      
         public SenderReceiversController(ILogger<SenderReceiversController> logger)
         {
             _logger = logger;
@@ -30,23 +32,46 @@ namespace GTRRWebApplication.Controllers
             if (!Request.Headers.TryGetValue("UserId", out var headerValue) ||
                 !int.TryParse(headerValue.FirstOrDefault(), out int userId))
             {
-                _logger.LogWarning("Invalid or missing UserId header parameter.");
+                
                 return BadRequest("Invalid or missing UserId header parameter");
             }
 
-            _logger.LogInformation("Request: {Path}, UserId: {UserId}, Method: {Method}",
-                Request.Path, userId, Request.Method);
+            _logger.LogInformation(
+                    "\nMethod: {Method}" +
+                    "\nRequest: {Url}" +
+                    "\nHeader:\nUserId={UserId}\n",
+                    Request.Method,
+                    $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
+                    Request.Headers["UserId"].ToString()
+                );
 
-         
+
             var (json, msg, error) = await GTRR_HelperDAL.GetSenderReceivers(userId);
 
             if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
             {
-                _logger.LogWarning("Bad Request: {Msg}, Error: {Error}", msg, error);
+                _logger.LogInformation(
+                     "\nResponse: [{Action}] [{StatusCode}] {Message}" +
+                     "\nOriginal Error: {Error}" +
+                     "\n{Separator}",
+                     "GetSenderReceivers",
+                     "400 Bad Request",
+                     msg,
+                     error,
+                     new string('-', 200)
+                 );
+
                 return BadRequest(msg);
             }
 
-            _logger.LogInformation("Returning compressed response for GetSenderReceivers.");
+
+            _logger.LogInformation(
+                    "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
+                    "GetSenderReceivers",
+                    "200 OK",
+                    new string('-', 200)
+                );
+
 
 
             var data = JsonSerializer.Deserialize<object>(json);
@@ -70,22 +95,47 @@ namespace GTRRWebApplication.Controllers
                 return BadRequest("Invalid or missing request body");
             }
 
-     
-            _logger.LogInformation("Request: {Method} {Path}", Request.Method, Request.Path);
-            _logger.LogInformation("UserId: {UserId}", userId);
-            _logger.LogInformation("Body: {Body}", JsonSerializer.Serialize(senderreceiver));
+            _logger.LogInformation(
+                "\nRequest: [{Method}] {Path}" +
+                "\nUserId: {UserId}" +
+                "\nBody: {Body}" +
+                "\n{Separator}",
+                Request.Method,
+                Request.Path,
+                userId,
+                JsonSerializer.Serialize(senderreceiver),
+                new string('-', 200)
+                );
 
-        
+
+
 
             var (id,msg, error) = await GTRR_HelperDAL.AddEditSenderReceiver(userId, JsonSerializer.Serialize(senderreceiver));
 
             if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
             {
-                _logger.LogWarning("Response: [400 Bad Request] Msg: {Msg}, Error: {Error}", msg, error);
+
+                _logger.LogInformation(
+                     "\nResponse: [{Action}] [{StatusCode}] {Message}" +
+                     "\nOriginal Error: {Error}" +
+                     "\n{Separator}",
+                     "AddEditSenderReceiver",
+                     "400 Bad Request",
+                     msg,
+                     error,
+                     new string('-', 200)
+                 );
+
+
                 return BadRequest(msg);
             }
 
-            _logger.LogInformation("Response: [200 OK]");
+            _logger.LogInformation(
+                    "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
+                    "AddEditSenderReceiver",
+                    "200 OK",
+                    new string('-', 200)
+                );
 
 
             return Ok(new
@@ -112,13 +162,40 @@ namespace GTRRWebApplication.Controllers
             {
                 return BadRequest("Invalid or missing SenderReceiverId header.");
             }
-
+            _logger.LogInformation(
+               "\nMethod: {Method}" +
+               "\nRequest: {Url}" +
+               "\nHeader:\nUserId={UserId}\n",
+               Request.Method,
+               $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
+               Request.Headers["UserId"].ToString()
+           );
             var (json, msg, error) = await GTRR_HelperDAL.GetSenderReceiverByIdAsync(loggedUser, senderReceiverId);
 
             if (!string.IsNullOrEmpty(error))
-                return BadRequest(error);
 
+            { _logger.LogInformation(
+                     "\nResponse: [{Action}] [{StatusCode}] {Message}" +
+                     "\nOriginal Error: {Error}" +
+                     "\n{Separator}",
+                     "GetSenderReceiverById",
+                     "400 Bad Request",
+                     msg,
+                     error,
+                     new string('-', 200)
+                 );
+
+
+                return BadRequest(error);
+            }
             var data = JsonSerializer.Deserialize<object>(json);
+            _logger.LogInformation(
+                 "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
+                 "GetSenderReceiverById",
+                 "200 OK",
+                 new string('-', 200)
+             );
+
             return Ok(data);
         }
 
