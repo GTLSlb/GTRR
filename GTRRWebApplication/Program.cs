@@ -12,7 +12,7 @@ Log.Logger = new LoggerConfiguration()
         retainedFileCountLimit: 14,
         shared: true,
         outputTemplate:
-        "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{Level:u3}] ({ProcessId}/{ThreadId}) {SourceContext} | {Message:lj}{NewLine}{Exception}")
+        "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}]")
     .CreateLogger();
 
 
