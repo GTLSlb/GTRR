@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 namespace GTRR_DataAccessLayer
 {
     public class GTRR_HelperDAL

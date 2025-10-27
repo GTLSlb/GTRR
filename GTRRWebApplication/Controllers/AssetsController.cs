@@ -2,14 +2,14 @@
 using GTRRWebApplication.Filters;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 
 namespace GTRRWebApplication.Controllers
 {
     [Route("api/GTRR/V1")]
     [ApiController]
-    [TokenAuthorize]
+    //[TokenAuthorize]
     public class AssetsController : ControllerBase
     {
         private readonly GTRR_HelperDAL _helperDal;
@@ -68,8 +68,8 @@ namespace GTRRWebApplication.Controllers
 
            
 
+            var data= JsonSerializer.Deserialize<object>(json);
 
-            var data = JsonConvert.DeserializeObject<object>(json);
             _logger.LogInformation(
                     "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
                     "GetVehicleTypes",
@@ -106,13 +106,13 @@ namespace GTRRWebApplication.Controllers
                 Request.Method,
                 Request.Path,
                 userId,
-                JsonConvert.SerializeObject(vehicletype),
-                new string('-', 200)
+               JsonSerializer.Serialize(vehicletype),
+            new string('-', 200)
                 );
 
 
 
-            var (msg, error) = await GTRR_HelperDAL.AddEditVehicleType(userId, JsonConvert.SerializeObject(vehicletype));
+            var (msg, error) = await GTRR_HelperDAL.AddEditVehicleType(userId, JsonSerializer.Serialize(vehicletype));
 
             if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
             {
@@ -187,8 +187,8 @@ namespace GTRRWebApplication.Controllers
             _logger.LogInformation("Returning compressed response for GetStates.");
 
 
-           
-            var data = JsonConvert.DeserializeObject<object>(json);
+
+            var data = JsonSerializer.Deserialize<object>(json);
             _logger.LogInformation(
                     "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
                     "GetVehicleTypes",
