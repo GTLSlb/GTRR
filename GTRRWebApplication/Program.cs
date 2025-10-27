@@ -1,4 +1,8 @@
+using GTRR_DataAccessLayer;
 using Serilog;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,8 +26,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
 
-            "https://gtrr.gtls.com.lb/",
-            "https://gtrr-api.gtls.com.lb/",
+            "https://gtrr.gtls.store",
+            "https://gtrr-api.gtls.store",
             "http://localhost:3000",
             "http://localhost:3001"
           
@@ -33,11 +37,25 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
 
 builder.Services.AddOpenApi();
-builder.Host.UseSerilog();
+
+builder.Services.AddDbContext<GTRR_DbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("GTRRConnectionString")));
+builder.Services.AddScoped<GTRR_HelperDAL>();
+
+builder.Services.AddControllers()
+    .AddNewtonsoftJson(options =>
+    {
+        
+        options.SerializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.DefaultContractResolver();
+    });
+
+
+
 var app = builder.Build();
 
 

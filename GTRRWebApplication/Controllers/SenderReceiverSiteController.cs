@@ -8,7 +8,7 @@ namespace GTRRWebApplication.Controllers
 {
     [Route("api/GTRR/V1")]
     [ApiController]
-    [TokenAuthorize]
+    //[TokenAuthorize]
     public class SenderReceiverSiteController : ControllerBase
     {
         private readonly ILogger<SenderReceiverSiteController> _logger;
@@ -53,14 +53,19 @@ namespace GTRRWebApplication.Controllers
             if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
             {
                 _logger.LogInformation(
-                      "\nMethod: {Method}" +
-                      "\nRequest: {Url}" +
-                      "\nHeader:\nUserId={UserId}\n",
-                      Request.Method,
-                      $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
-                      Request.Headers["UserId"].ToString()
-                  );
-                return BadRequest(msg);
+                         "\nMethod: {Method}" +
+                         "\nRequest: {Url}" +
+                         "\nHeader:\nUserId={UserId}\nError: {Error}\nMessage: {Msg}",
+                         Request.Method,
+                         $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
+                         Request.Headers["UserId"].ToString(),
+                         error,   
+                         msg    
+                     );
+                var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
+
+                return BadRequest(new { message = responseMessage });
+
             }
 
             _logger.LogInformation(
@@ -104,17 +109,23 @@ namespace GTRRWebApplication.Controllers
             if (!string.IsNullOrEmpty(error))
             {
                 _logger.LogInformation(
-                     "\nResponse: [{Action}] [{StatusCode}] {Message}" +
-                     "\nOriginal Error: {Error}" +
-                     "\n{Separator}",
-                     "GetSenderReceiverSiteById",
-                     "400 Bad Request",
-                     msg,
-                     error,
-                     new string('-', 200)
-                 );
+                    "\nMethod: {Method}" +
+                    "\nRequest: {Url}" +
+                    "\nHeader:\nUserId={UserId}\nError: {Error}\nMessage: {Msg}",
+                    Request.Method,
+                    $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
+                    Request.Headers["UserId"].ToString(),
+                    error,
+                    msg
+                );
+                var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
 
-                return BadRequest(error); }
+                return BadRequest(new { message = responseMessage }
+
+
+                );
+            }
+               
 
             var data = JsonSerializer.Deserialize<object>(json);
                     _logger.LogInformation(
