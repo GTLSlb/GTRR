@@ -8,7 +8,7 @@ namespace GTRRWebApplication.Controllers
 {
     [Route("api/GTRR/V1")]
     [ApiController]
-    //[TokenAuthorize]
+    [TokenAuthorize]
     public class SenderReceiverSiteController : ControllerBase
     {
         private readonly ILogger<SenderReceiverSiteController> _logger;
