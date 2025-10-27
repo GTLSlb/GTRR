@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 
+
 namespace GTRRWebApplication.Controllers
 {
     [Route("api/GTRR/V1")]
@@ -11,10 +12,13 @@ namespace GTRRWebApplication.Controllers
     [TokenAuthorize]
     public class AssetsController : ControllerBase
     {
+        private readonly GTRR_HelperDAL _helperDal;
+
         private readonly ILogger<AssetsController> _logger;
 
-        public AssetsController(ILogger<AssetsController> logger)
+        public AssetsController(GTRR_HelperDAL helperDal,ILogger<AssetsController> logger)
         {
+            _helperDal = helperDal;
             _logger = logger;
         }
 
@@ -48,23 +52,24 @@ namespace GTRRWebApplication.Controllers
             if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
             {
                 _logger.LogInformation(
-                     "\nResponse: [{Action}] [{StatusCode}] {Message}" +
-                     "\nOriginal Error: {Error}" +
-                     "\n{Separator}",
-                     "GetVehicleTypes",
-                     "400 Bad Request",
-                     msg,
-                     error,
-                     new string('-', 200)
-                 );
+                    "\nMethod: {Method}" +
+                    "\nRequest: {Url}" +
+                    "\nHeader:\nUserId={UserId}\nError: {Error}\nMessage: {Msg}",
+                    Request.Method,
+                    $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
+                    Request.Headers["UserId"].ToString(),
+                    error,
+                    msg
+                );
+                var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
 
-                return BadRequest(msg);
+                return BadRequest(new { message = responseMessage });
             }
 
            
 
+            var data= JsonSerializer.Deserialize<object>(json);
 
-            var data = JsonSerializer.Deserialize<object>(json);
             _logger.LogInformation(
                     "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
                     "GetVehicleTypes",
@@ -101,8 +106,8 @@ namespace GTRRWebApplication.Controllers
                 Request.Method,
                 Request.Path,
                 userId,
-                JsonSerializer.Serialize(vehicletype),
-                new string('-', 200)
+               JsonSerializer.Serialize(vehicletype),
+            new string('-', 200)
                 );
 
 
@@ -112,18 +117,18 @@ namespace GTRRWebApplication.Controllers
             if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
             {
                 _logger.LogInformation(
-                     "\nResponse: [{Action}] [{StatusCode}] {Message}" +
-                     "\nOriginal Error: {Error}" +
-                     "\n{Separator}",
-                     "AddEditVehicleType",
-                     "400 Bad Request",
-                     msg,
+                     "\nMethod: {Method}" +
+                     "\nRequest: {Url}" +
+                     "\nHeader:\nUserId={UserId}\nError: {Error}\nMessage: {Msg}",
+                     Request.Method,
+                     $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
+                     Request.Headers["UserId"].ToString(),
                      error,
-                     new string('-', 200)
+                     msg
                  );
+                var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
 
-
-                return BadRequest(msg);
+                return BadRequest(new { message = responseMessage });
             }
 
             _logger.LogInformation(
@@ -163,16 +168,85 @@ namespace GTRRWebApplication.Controllers
 
             if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
             {
-                _logger.LogWarning("Bad Request: {Msg}, Error: {Error}", msg, error);
-                return BadRequest(msg);
+                _logger.LogInformation(
+                    "\nMethod: {Method}" +
+                    "\nRequest: {Url}" +
+                    "\nHeader:\nUserId={UserId}\nError: {Error}\nMessage: {Msg}",
+                    Request.Method,
+                    $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
+                    Request.Headers["UserId"].ToString(),
+                    error,
+                    msg
+                );
+                var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
+
+                return BadRequest(new { message = responseMessage });
+              
             }
 
             _logger.LogInformation("Returning compressed response for GetStates.");
 
 
-            var data = JsonSerializer.Deserialize<object>(json);
 
+            var data = JsonSerializer.Deserialize<object>(json);
+            _logger.LogInformation(
+                    "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
+                    "GetVehicleTypes",
+                    "200 OK",
+                    new string('-', 200)
+                );
             return Ok(data);
+        }
+
+
+
+
+        [HttpGet("PalletManag")]
+        [GzipCompression]
+        public async Task<IActionResult> PalletManagement()
+        {
+            if (!Request.Headers.TryGetValue("UserId", out var headerValue) ||
+                !int.TryParse(headerValue.FirstOrDefault(), out int userId))
+            {
+                return BadRequest("Invalid or missing UserId header parameter");
+            }
+
+            _logger.LogInformation(
+                "\nMethod: {Method}" +
+                "\nRequest: {Url}" +
+                "\nHeader:\nUserId={UserId}\n",
+                Request.Method,
+                $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
+                userId
+            );
+
+            var (data, error) = await _helperDal.GetActivePalletManagementAsync(userId);
+    
+
+            if (!string.IsNullOrEmpty(error))
+            {
+                _logger.LogInformation(
+                    "\nMethod: {Method}" +
+                    "\nRequest: {Url}" +
+                    "\nHeader:\nUserId={UserId}\nError: {Error}",
+                    Request.Method,
+                    $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
+                    Request.Headers["UserId"].ToString(),
+                    error
+                   
+                );
+                var responseMessage ="An unexpected error occurred.";
+
+                return BadRequest(new { message = responseMessage });
+            }
+
+            _logger.LogInformation(
+                "\nResponse: [PalletManag] [200 OK]" +
+                "\n{Separator}",
+                new string('-', 200)
+            );
+
+            return Ok(data); 
         }
 
 

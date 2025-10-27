@@ -1,4 +1,7 @@
+using GTRR_DataAccessLayer;
 using Serilog;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,11 +36,19 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
 
-builder.Services.AddOpenApi();
-builder.Host.UseSerilog();
+
+
+builder.Services.AddDbContext<GTRR_DbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("GTRRConnectionString")));
+builder.Services.AddScoped<GTRR_HelperDAL>();
+
+
+
+
 var app = builder.Build();
 
 
