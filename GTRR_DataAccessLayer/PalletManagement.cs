@@ -13,10 +13,10 @@ namespace GTRR_DataAccessLayer
     public class PalletManagement
     {
         [Key]
-        [JsonPropertyName("PalletManagId")]
+        [JsonPropertyName("PalletMgmtId")]
         public int PALLET_MGMT_ID { get; set; }
 
-        [JsonPropertyName("PalletManagName")]
+        [JsonPropertyName("PalletMgmtName")]
         public string? PALLET_MGMT_NAME { get; set; }
 
         [System.Text.Json.Serialization.JsonIgnore]
