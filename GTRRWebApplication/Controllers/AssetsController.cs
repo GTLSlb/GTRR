@@ -201,7 +201,7 @@ namespace GTRRWebApplication.Controllers
 
 
 
-        [HttpGet("PalletManag")]
+        [HttpGet("PalletManagement")]
         [GzipCompression]
         public async Task<IActionResult> PalletManagement()
         {
