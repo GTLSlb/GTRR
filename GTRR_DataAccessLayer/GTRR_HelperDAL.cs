@@ -6,14 +6,21 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 namespace GTRR_DataAccessLayer
 {
-    public static class GTRR_HelperDAL
+    public class GTRR_HelperDAL
     {
         private static readonly string? gtrrConnectionString;
         private static readonly int commandTimeout = 120;
 
+        private readonly GTRR_DbContext _context;
+
+        public GTRR_HelperDAL(GTRR_DbContext context)
+        {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+        }
 
         static GTRR_HelperDAL()
         {
@@ -645,5 +652,45 @@ namespace GTRR_DataAccessLayer
             }
         }
 
+
+        public async Task<(List<PalletManagement>? Data, string? Error)> GetActivePalletManagementAsync(int? userId)
+        {
+            if (userId == null)
+                return (null, "Invalid User ID");
+
+            try
+            {
+                var userExists = await _context.Database
+            .ExecuteSqlInterpolatedAsync(
+                $"SELECT 1 WHERE EXISTS (SELECT 1 FROM dbo.GTAM_Users WHERE USER_ID = {userId} AND STATUS_ID = 1)");
+
+                if (userExists == 0)
+                    return (null, "Invalid User ID");
+
+            
+
+                var data = await _context.PalletManagements
+                    .Where(p => p.STATUS_ID == 1)
+                    .OrderBy(p => p.PALLET_MGMT_NAME)
+                    .ToListAsync();
+
+
+                return (data, null);
+            }
+            catch (SqlException ex) when (ex.Number == -2)
+            {
+                return (null, "Execution Timeout Expired. Please try again later or optimize your query");
+            }
+            catch (SqlException ex)
+            {
+                return (null, "SQL Error: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return (null, "An error occurred: " + ex.Message);
+            }
+        }
     }
+
+
 }
