@@ -24,53 +24,71 @@ namespace GTRRWebApplication.Controllers
         [GzipCompression]
         public async Task<IActionResult> GetRequiredDocs()
         {
-            if (!Request.Headers.TryGetValue("UserId", out var headerValue) ||
-                !int.TryParse(headerValue.FirstOrDefault(), out int userId))
-            {
-              
-                return BadRequest("Invalid or missing UserId header parameter");
-            }
+            try {
+                if (!Request.Headers.TryGetValue("UserId", out var headerValue) ||
+                    !int.TryParse(headerValue.FirstOrDefault(), out int userId))
+                {
 
-            _logger.LogInformation(
-                "\nMethod: {Method}" +
-                "\nRequest: {Url}" +
-                "\nHeader:\nUserId={UserId}\n",
-                Request.Method,
-                $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
-                Request.Headers["UserId"].ToString()
-                );
+                    var message = "Invalid or missing UserId header parameter";
+                    _logger.LogWarning(message);
+                    SentrySdk.CaptureMessage(message, SentryLevel.Warning);
+                    return BadRequest(message);
+                }
 
-
-            var (json, msg, error) = await GTRR_HelperDAL.GetRequiredDocs(userId);
-
-            if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
-            {
                 _logger.LogInformation(
-                     "\nMethod: {Method}" +
-                     "\nRequest: {Url}" +
-                     "\nHeader:\nUserId={UserId}\nError: {Error}\nMessage: {Msg}",
-                     Request.Method,
-                     $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
-                     Request.Headers["UserId"].ToString(),
-                     error,
-                     msg
-                 );
-                var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
+                    "\nMethod: {Method}" +
+                    "\nRequest: {Url}" +
+                    "\nHeader:\nUserId={UserId}\n",
+                    Request.Method,
+                    $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
+                    Request.Headers["UserId"].ToString()
+                    );
 
-                return BadRequest(new { message = responseMessage });
+
+                var (json, msg, error) = await GTRR_HelperDAL.GetRequiredDocs(userId);
+
+                if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
+                {
+                    _logger.LogInformation(
+                         "\nMethod: {Method}" +
+                         "\nRequest: {Url}" +
+                         "\nHeader:\nUserId={UserId}\nError: {Error}\nMessage: {Msg}",
+                         Request.Method,
+                         $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
+                         Request.Headers["UserId"].ToString(),
+                         error,
+                         msg
+                     );
+
+                    SentrySdk.CaptureMessage($"GetRequiredDocs failed. Error: {error} | Msg: {msg}", SentryLevel.Error);
+
+                    var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
+
+                    return BadRequest(new { message = responseMessage });
+                }
+
+
+
+
+                var data = JsonSerializer.Deserialize<object>(json);
+                _logger.LogInformation(
+                       "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
+                       "GetRequiredDocs",
+                       "200 OK",
+                       new string('-', 200)
+                    );
+               
+
+                return Ok(data);
             }
+            catch (Exception ex)
+            {
 
-       
+                _logger.LogError(ex, "Unhandled exception in GetRequiredDocs");
+                SentrySdk.CaptureException(ex);
 
-
-            var data = JsonSerializer.Deserialize<object>(json);
-            _logger.LogInformation(
-                   "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
-                   "GetRequiredDocs",
-                   "200 OK",
-                   new string('-', 200)
-                );
-            return Ok(data);
+                return StatusCode(500, new { message = "Internal server error" });
+            }
         }
 
 
@@ -78,15 +96,23 @@ namespace GTRRWebApplication.Controllers
         [HttpPost("RequiredDocs")]
         public async Task<IActionResult> AddEditRequiredDocuments([FromBody] object vehicletype)
         {
+            try { 
             if (!Request.Headers.TryGetValue("UserId", out var headerValues) ||
                 !int.TryParse(headerValues.FirstOrDefault(), out int userId))
             {
-                return BadRequest("Invalid or missing UserId header parameter");
-            }
+                    var message = "Invalid or missing UserId header parameter";
+                    _logger.LogWarning(message);
+                    SentrySdk.CaptureMessage(message, SentryLevel.Warning);
+                    return BadRequest(message);
+                }
 
             if (vehicletype == null)
             {
-                return BadRequest("Invalid or missing request body");
+                    var message = "Invalid or missing request body";
+                    _logger.LogWarning(message);
+                    SentrySdk.CaptureMessage(message, SentryLevel.Warning);
+                    return BadRequest(message);
+                 
             }
 
             _logger.LogInformation(
@@ -117,7 +143,8 @@ namespace GTRRWebApplication.Controllers
                      error,
                      msg
                  );
-                var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
+                    SentrySdk.CaptureMessage($"AddEditRequiredDocuments failed. Error: {error} | Msg: {msg}", SentryLevel.Error);
+                    var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
 
                 return BadRequest(new { message = responseMessage });
             }
@@ -129,9 +156,19 @@ namespace GTRRWebApplication.Controllers
                     new string('-', 200)
                 );
 
+              
 
 
-            return Ok();
+                return Ok();
+        }
+              catch (Exception ex)
+            {
+ 
+                _logger.LogError(ex, "Unhandled exception in AddEditRequiredDocuments");
+                SentrySdk.CaptureException(ex);
+ 
+                return StatusCode(500, new { message = "Internal server error" });
+            }
         }
 
     }

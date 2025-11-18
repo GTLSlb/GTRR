@@ -22,79 +22,106 @@ namespace GTRRWebApplication.Controllers
         [HttpPost("SenderReceiver/Site")]
         public async Task<IActionResult> AddEditSenderReceiverSite([FromBody] object site)
         {
-            if (!Request.Headers.TryGetValue("UserId", out var headerValues) ||
-                !int.TryParse(headerValues.FirstOrDefault(), out int userId))
+            try
             {
-                return BadRequest("Invalid or missing UserId header parameter");
-            }
+                if (!Request.Headers.TryGetValue("UserId", out var headerValues) ||
+                    !int.TryParse(headerValues.FirstOrDefault(), out int userId))
+                {
+                    var message = "Invalid or missing UserId header parameter";
+                    _logger.LogWarning(message);
+                    SentrySdk.CaptureMessage(message, SentryLevel.Warning);
+                    return BadRequest(message);
+                }
 
-            if (site == null)
-            {
-                return BadRequest("Invalid or missing request body");
-            }
-
-
-              _logger.LogInformation(
-                "\nRequest: [{Method}] {Path}" +
-                "\nUserId: {UserId}" +
-                "\nBody: {Body}" +
-                "\n{Separator}",
-                Request.Method,
-                Request.Path,
-                userId,
-                JsonSerializer.Serialize(site),
-                new string('-', 200)
-                );
+                if (site == null)
+                {
+                    var message = "Invalid or missing request body";
+                    _logger.LogWarning(message);
+                    SentrySdk.CaptureMessage(message, SentryLevel.Warning);
+                    return BadRequest(message);
+                 
+                }
 
 
-
-            var (msg, error) = await GTRR_HelperDAL.AddEditSenderReceiverSite(userId, JsonSerializer.Serialize(site));
-
-            if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
-            {
                 _logger.LogInformation(
-                         "\nMethod: {Method}" +
-                         "\nRequest: {Url}" +
-                         "\nHeader:\nUserId={UserId}\nError: {Error}\nMessage: {Msg}",
-                         Request.Method,
-                         $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
-                         Request.Headers["UserId"].ToString(),
-                         error,   
-                         msg    
-                     );
-                var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
+                  "\nRequest: [{Method}] {Path}" +
+                  "\nUserId: {UserId}" +
+                  "\nBody: {Body}" +
+                  "\n{Separator}",
+                  Request.Method,
+                  Request.Path,
+                  userId,
+                  JsonSerializer.Serialize(site),
+                  new string('-', 200)
+                  );
 
-                return BadRequest(new { message = responseMessage });
 
+
+                var (msg, error) = await GTRR_HelperDAL.AddEditSenderReceiverSite(userId, JsonSerializer.Serialize(site));
+
+                if (!string.IsNullOrEmpty(msg) || !string.IsNullOrEmpty(error))
+                {
+                    _logger.LogInformation(
+                             "\nMethod: {Method}" +
+                             "\nRequest: {Url}" +
+                             "\nHeader:\nUserId={UserId}\nError: {Error}\nMessage: {Msg}",
+                             Request.Method,
+                             $"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}",
+                             Request.Headers["UserId"].ToString(),
+                             error,
+                             msg
+                         );
+                    SentrySdk.CaptureMessage($"AddEditSenderReceiverSite failed. Error: {error} | Msg: {msg}", SentryLevel.Error);
+
+                    var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
+
+                    return BadRequest(new { message = responseMessage });
+
+                }
+
+                _logger.LogInformation(
+                     "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
+                     "AddEditSenderReceiverSite",
+                     "200 OK",
+                     new string('-', 200)
+                 );
+
+               
+
+                return Ok();
             }
+            catch (Exception ex)
+            {
 
-            _logger.LogInformation(
-                 "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
-                 "GetSenderReceivers",
-                 "200 OK",
-                 new string('-', 200)
-             );
-            return Ok();
+                _logger.LogError(ex, "Unhandled exception in AddEditSenderReceiverSite");
+                SentrySdk.CaptureException(ex);
+
+                return StatusCode(500, new { message = "Internal server error" });
+            }
         }
 
         [HttpGet("SenderReceiver/Site")]
         [GzipCompression]
         public async Task<IActionResult> GetSenderReceiverSiteById()
         {
-
+            try { 
             if (!Request.Headers.TryGetValue("UserId", out var userIdHeader) ||
                 !int.TryParse(userIdHeader.FirstOrDefault(), out int loggedUser))
             {
-                return BadRequest("Invalid or missing UserId header.");
-            }
+                    var message = "Invalid or missing UserId header parameter";
+                    _logger.LogWarning(message);
+                    SentrySdk.CaptureMessage(message, SentryLevel.Warning);
+                    return BadRequest(message);
+                }
 
 
             if (!Request.Headers.TryGetValue("SenderReceiverSiteId", out var idHeader) ||
                 !int.TryParse(idHeader.FirstOrDefault(), out int SenderReceiverSiteId))
             {
-              
-
-                return BadRequest("Invalid or missing SenderReceiverSiteId header.");
+                    var message = "Invalid or missing SenderReceiverSiteId header.";
+                    _logger.LogWarning(message);
+                    SentrySdk.CaptureMessage(message, SentryLevel.Warning);
+                    return BadRequest(message);
             }
             _logger.LogInformation(
                        "\nMethod: {Method}" +
@@ -118,23 +145,36 @@ namespace GTRRWebApplication.Controllers
                     error,
                     msg
                 );
-                var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
+                    SentrySdk.CaptureMessage($"GetSenderReceiverSiteById failed. Error: {error} | Msg: {msg}", SentryLevel.Error);  
+
+                    var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
 
                 return BadRequest(new { message = responseMessage }
 
 
                 );
             }
-               
+
 
             var data = JsonSerializer.Deserialize<object>(json);
-                    _logger.LogInformation(
-                         "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
-                         "GetSenderReceiverSiteById",
-                         "200 OK",
-                         new string('-', 200)
-                     );
-            return Ok(data);
+            _logger.LogInformation(
+                 "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
+                 "GetSenderReceiverSiteById",
+                 "200 OK",
+                 new string('-', 200)
+             );
+            
+
+                return Ok(data);
+        }
+        catch (Exception ex)
+    {
+ 
+        _logger.LogError(ex, "Unhandled exception in GetSenderReceiverSiteById");
+        SentrySdk.CaptureException(ex);
+ 
+        return StatusCode(500, new { message = "Internal server error" });
+    }
         }
     }
 }

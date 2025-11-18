@@ -28,11 +28,15 @@ namespace GTRRWebApplication.Controllers
         [GzipCompression]
         public async Task<IActionResult> VehicleTypes()
         {
+            try { 
             if (!Request.Headers.TryGetValue("UserId", out var headerValue) ||
                 !int.TryParse(headerValue.FirstOrDefault(), out int userId))
             {
-               
-                return BadRequest("Invalid or missing UserId header parameter");
+
+                    var message = "Invalid or missing UserId header parameter";
+                    _logger.LogWarning(message);
+                    SentrySdk.CaptureMessage(message, SentryLevel.Warning);
+                    return BadRequest(message);
             }
 
             _logger.LogInformation(
@@ -61,7 +65,8 @@ namespace GTRRWebApplication.Controllers
                     error,
                     msg
                 );
-                var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
+                    SentrySdk.CaptureMessage($"GetVehicleTypes failed. Error: {error} | Msg: {msg}", SentryLevel.Error);
+                    var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
 
                 return BadRequest(new { message = responseMessage });
             }
@@ -76,24 +81,40 @@ namespace GTRRWebApplication.Controllers
                     "200 OK",
                     new string('-', 200)
                 );
-
-               return Ok(data); 
+              
+                return Ok(data);
         }
 
-
+            catch (Exception ex)
+        {
+ 
+            _logger.LogError(ex, "Unhandled exception in GetVehicleTypes");
+            SentrySdk.CaptureException(ex);
+ 
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+}
 
         [HttpPost("VehicleType")]
         public async Task<IActionResult> AddEditVehicleType([FromBody] object vehicletype)
         {
+            try { 
             if (!Request.Headers.TryGetValue("UserId", out var headerValues) ||
                 !int.TryParse(headerValues.FirstOrDefault(), out int userId))
             {
-                return BadRequest("Invalid or missing UserId header parameter");
-            }
+                    var message = "Invalid or missing UserId header parameter";
+                    _logger.LogWarning(message);
+                    SentrySdk.CaptureMessage(message, SentryLevel.Warning);
+                    return BadRequest(message);
+                }
 
             if (vehicletype == null)
-            {
-                return BadRequest("Invalid or missing request body");
+                {
+                    var message = "Invalid or missing request body";
+                    _logger.LogWarning(message);
+                    SentrySdk.CaptureMessage(message, SentryLevel.Warning);
+                    return BadRequest(message);
+                    
             }
 
 
@@ -126,7 +147,8 @@ namespace GTRRWebApplication.Controllers
                      error,
                      msg
                  );
-                var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
+                    SentrySdk.CaptureMessage($"SenderReceivers failed. Error: {error} | Msg: {msg}", SentryLevel.Error);
+                    var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
 
                 return BadRequest(new { message = responseMessage });
             }
@@ -137,21 +159,33 @@ namespace GTRRWebApplication.Controllers
                     "200 OK",
                     new string('-', 200)
                 );
+        
 
-
-            return Ok();
+                return Ok();
         }
+            catch (Exception ex)
+            {
 
+                _logger.LogError(ex, "Unhandled exception in AddEditVehicleType");
+                SentrySdk.CaptureException(ex);
+
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
 
         [HttpGet("States")]
         [GzipCompression]
         public async Task<IActionResult> GetStates()
         {
+            try { 
             if (!Request.Headers.TryGetValue("UserId", out var headerValue) ||
                 !int.TryParse(headerValue.FirstOrDefault(), out int userId))
             {
 
-                return BadRequest("Invalid or missing UserId header parameter");
+                    var message = "Invalid or missing UserId header parameter";
+                    _logger.LogWarning(message);
+                    SentrySdk.CaptureMessage(message, SentryLevel.Warning);
+                    return BadRequest(message);
             }
             _logger.LogInformation(
                  "\nMethod: {Method}" +
@@ -178,7 +212,8 @@ namespace GTRRWebApplication.Controllers
                     error,
                     msg
                 );
-                var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
+                    SentrySdk.CaptureMessage($"GetStates failed. Error: {error} | Msg: {msg}", SentryLevel.Error);
+                    var responseMessage = string.IsNullOrEmpty(msg) ? "An unexpected error occurred." : msg;
 
                 return BadRequest(new { message = responseMessage });
               
@@ -191,13 +226,22 @@ namespace GTRRWebApplication.Controllers
             var data = JsonSerializer.Deserialize<object>(json);
             _logger.LogInformation(
                     "\nResponse: [{Action}] [{StatusCode}]\n{Separator}",
-                    "GetVehicleTypes",
+                    "GetStates",
                     "200 OK",
                     new string('-', 200)
                 );
-            return Ok(data);
+          
+                return Ok(data);
         }
+            catch (Exception ex)
+            {
 
+                _logger.LogError(ex, "Unhandled exception in GetStates");
+                SentrySdk.CaptureException(ex);
+
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
 
 
 
@@ -205,10 +249,14 @@ namespace GTRRWebApplication.Controllers
         [GzipCompression]
         public async Task<IActionResult> PalletManagement()
         {
+            try { 
             if (!Request.Headers.TryGetValue("UserId", out var headerValue) ||
                 !int.TryParse(headerValue.FirstOrDefault(), out int userId))
             {
-                return BadRequest("Invalid or missing UserId header parameter");
+                    var message = "Invalid or missing UserId header parameter";
+                    _logger.LogWarning(message);
+                    SentrySdk.CaptureMessage(message, SentryLevel.Warning);
+                    return BadRequest(message);
             }
 
             _logger.LogInformation(
@@ -235,7 +283,8 @@ namespace GTRRWebApplication.Controllers
                     error
                    
                 );
-                var responseMessage ="An unexpected error occurred.";
+                    SentrySdk.CaptureMessage($"PalletManagement failed. Error: {error}", SentryLevel.Error);
+                    var responseMessage ="An unexpected error occurred.";
 
                 return BadRequest(new { message = responseMessage });
             }
@@ -245,10 +294,18 @@ namespace GTRRWebApplication.Controllers
                 "\n{Separator}",
                 new string('-', 200)
             );
-
-            return Ok(data); 
+               
+                return Ok(data); 
         }
 
+            catch (Exception ex)
+            {
 
+                _logger.LogError(ex, "Unhandled exception in PalletManagement");
+                SentrySdk.CaptureException(ex);
+
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
     }
 }
