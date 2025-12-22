@@ -10,17 +10,14 @@ namespace GTRRWebApplication.Filters
     {
         public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
-            string? message;
-
-            if (!IsTokenValid(context, out message))
+            if (!IsTokenValid(context, out string? message, out HttpStatusCode statusCode))
             {
                 context.Result = new JsonResult(new
                 {
-                    status = (int)HttpStatusCode.Unauthorized,
-                    message = message
+                    Message = message
                 })
                 {
-                    StatusCode = (int)HttpStatusCode.Unauthorized
+                    StatusCode = (int)statusCode
                 };
                 return;
             }
@@ -28,12 +25,15 @@ namespace GTRRWebApplication.Filters
             await Task.CompletedTask;
         }
 
-        private bool IsTokenValid(AuthorizationFilterContext context, out string? message)
+
+        private bool IsTokenValid(AuthorizationFilterContext context, out string? message, out HttpStatusCode statusCode)
         {
             message = null;
+            statusCode = HttpStatusCode.Unauthorized;
 
             var request = context.HttpContext.Request;
 
+            // UserId
             if (!request.Headers.TryGetValue("UserId", out var userIdValues))
             {
                 message = "No UserId header found";
@@ -46,6 +46,7 @@ namespace GTRRWebApplication.Filters
                 return false;
             }
 
+            // Authorization
             if (!request.Headers.TryGetValue("Authorization", out var authValues))
             {
                 message = "No Authorization header found";
@@ -53,7 +54,8 @@ namespace GTRRWebApplication.Filters
             }
 
             var authHeader = authValues.FirstOrDefault();
-            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrEmpty(authHeader) ||
+                !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
             {
                 message = "Invalid or missing Bearer token";
                 return false;
@@ -61,30 +63,50 @@ namespace GTRRWebApplication.Filters
 
             var token = authHeader.Substring("Bearer ".Length).Trim();
 
-            return YourTokenValidationLogic(token, userId, out message);
+            return YourTokenValidationLogic(token, userId, out message, out statusCode);
         }
 
-        private bool YourTokenValidationLogic(string token, int userId, out string? message)
+
+        private bool YourTokenValidationLogic(string token, int userId, out string? message, out HttpStatusCode statusCode)
         {
             message = null;
+            statusCode = HttpStatusCode.Unauthorized;
 
             try
             {
-                bool isValid = GTRR_HelperDAL.ValidateUserToken(userId, token, out bool isTokenValid);
+                bool isValid = GTRR_HelperDAL.ValidateUserToken(
+                    userId,
+                    token,
+                    out bool isTokenValid,
+                    out string? dbMessage
+                );
 
-                if (!isValid)
+                // 🚫 Inactive application
+                if (!string.IsNullOrEmpty(dbMessage) &&
+                    dbMessage.Equals("Inactive Application", StringComparison.OrdinalIgnoreCase))
+                {
+                    message = "Inactive Application";
+                    statusCode = HttpStatusCode.Forbidden; // 403
+                    return false;
+                }
+
+                // 🚫 Token invalid / expired
+                if (!isValid || !isTokenValid)
                 {
                     message = "Token is invalid or expired.";
+                    statusCode = HttpStatusCode.Unauthorized; // 401
                     return false;
                 }
 
                 return true;
             }
-            catch (Exception ex)
+            catch
             {
-                message = "Error during token validation: " + ex.Message;
+                message = "Error during token validation.";
+                statusCode = HttpStatusCode.InternalServerError;
                 return false;
             }
         }
+
     }
 }
