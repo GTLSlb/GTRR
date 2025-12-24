@@ -81,20 +81,27 @@ namespace GTRRWebApplication.Filters
                     out string? dbMessage
                 );
 
-                // 🚫 Inactive application
+          
                 if (!string.IsNullOrEmpty(dbMessage) &&
                     dbMessage.Equals("Inactive Application", StringComparison.OrdinalIgnoreCase))
                 {
                     message = "Inactive Application";
-                    statusCode = HttpStatusCode.Forbidden; // 403
+                    statusCode = HttpStatusCode.Forbidden; 
+                    return false;
+                }
+                if (!string.IsNullOrEmpty(dbMessage) &&
+                  dbMessage.Equals("Password Expired", StringComparison.OrdinalIgnoreCase))
+                {
+                    message = "Your password has expired. Please reset your password to continue";
+                    statusCode = HttpStatusCode.Forbidden;
                     return false;
                 }
 
-                // 🚫 Token invalid / expired
+            
                 if (!isValid || !isTokenValid)
                 {
                     message = "Token is invalid or expired.";
-                    statusCode = HttpStatusCode.Unauthorized; // 401
+                    statusCode = HttpStatusCode.Unauthorized;
                     return false;
                 }
 
