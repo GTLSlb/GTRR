@@ -31,10 +31,10 @@ namespace GTRR_DataAccessLayer
             gtrrConnectionString = config.GetConnectionString("GTRRConnectionString");
         }
 
-        public static bool ValidateUserToken(int userId, string token, out bool validation)
+        public static bool ValidateUserToken(int userId, string token, out bool validation, out string? message)
         {
             validation = false;
-
+            message = null;
             try
             {
                 using (SqlConnection connection = new SqlConnection(gtrrConnectionString))
@@ -43,25 +43,33 @@ namespace GTRR_DataAccessLayer
                     command.CommandType = CommandType.StoredProcedure;
                     command.CommandTimeout = commandTimeout;
 
-                    command.Parameters.Add(new SqlParameter("@USER_ID", userId));
-                    command.Parameters.Add(new SqlParameter("@TOKEN", token));
+                    command.Parameters.AddWithValue("@USER_ID", userId);
+                    command.Parameters.AddWithValue("@TOKEN", token);
 
-                    SqlParameter isValidParam = new SqlParameter("@IS_VALID", SqlDbType.Bit)
+                    var isValidParam = new SqlParameter("@IS_VALID", SqlDbType.Bit)
                     {
                         Direction = ParameterDirection.Output
                     };
                     command.Parameters.Add(isValidParam);
 
+                    var msgParam = new SqlParameter("@MSG", SqlDbType.NVarChar, 200)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    command.Parameters.Add(msgParam);
+
                     connection.Open();
                     command.ExecuteNonQuery();
 
                     validation = (bool)(isValidParam.Value ?? false);
+                    message = msgParam.Value?.ToString();
+
                     return validation;
                 }
             }
             catch (Exception ex)
             {
-             
+
                 Console.WriteLine("Error in ValidateUserToken: " + ex.Message);
                 return false;
             }
@@ -551,7 +559,7 @@ namespace GTRR_DataAccessLayer
                     CommandTimeout = commandTimeout
                 };
 
-                command.Parameters.Add(new SqlParameter("@LOGGED_USER", userId ?? (object)DBNull.Value));
+                command.Parameters.Add(new SqlParameter("@LOGGED", userId ?? (object)DBNull.Value));
 
                 var reportParam = new SqlParameter("@JSON", SqlDbType.NVarChar, -1)
                 {
